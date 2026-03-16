@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
+import { createPagesServerClient } from '@/lib/supabase/server';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -9,7 +9,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     // 1. Verificar autenticación y rol usando el cliente normal (con cookies)
-    const supabase = createPagesServerClient({ req, res });
+    const supabase = createPagesServerClient(req, res);
     const { data: { session } } = await supabase.auth.getSession();
     
     if (!session) {

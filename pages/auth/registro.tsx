@@ -148,7 +148,7 @@ export default function Registro() {
 
           <div className="flex justify-center py-2">
             <HCaptcha
-              sitekey={process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY || ""}
+              sitekey={process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY!}
               onVerify={(token) => setCaptchaToken(token)}
               theme="dark"
             />

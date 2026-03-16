@@ -1,13 +1,13 @@
 import Head from 'next/head';
 import { useState } from 'react';
-import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
+import { createPagesServerClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { Shield, AlertTriangle, CheckCircle, XCircle, Clock, Fingerprint, Globe } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 export const getServerSideProps = async (ctx: any) => {
-  const supabase = createPagesServerClient(ctx);
+  const supabase = createPagesServerClient(ctx.req, ctx.res);
   const { data: { session } } = await supabase.auth.getSession();
   
   if (!session) return { redirect: { destination: '/auth/login', permanent: false } };

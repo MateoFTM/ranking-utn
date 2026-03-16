@@ -1,4 +1,4 @@
-import { createBrowserClient } from '@supabase/auth-helpers-nextjs';
+import { createBrowserClient } from '@supabase/ssr';
 
 // Asumimos que los tipos de la base de datos se generarán aquí en el futuro
 export type Database = any;
