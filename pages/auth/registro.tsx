@@ -5,7 +5,6 @@ import { useRouter } from 'next/router';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import HCaptcha from '@hcaptcha/react-hcaptcha';
 import { motion } from 'motion/react';
 import { supabase } from '@/lib/supabase/client';
 import { getFingerprint, hashFingerprint } from '@/lib/fingerprint';
@@ -27,15 +26,15 @@ export default function Registro() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [isHuman, setIsHuman] = useState(false);
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema)
   });
 
   const onSubmit = async (data: FormData) => {
-    if (!captchaToken) {
-      setError('Por favor, completa el captcha');
+    if (!isHuman) {
+      setError('Por favor, confirma que no eres un robot');
       return;
     }
 
@@ -146,12 +145,16 @@ export default function Registro() {
             {errors.confirmPassword && <p className="text-[#F75F5F] text-xs mt-1">{errors.confirmPassword.message}</p>}
           </div>
 
-          <div className="flex justify-center py-2">
-            <HCaptcha
-              sitekey={process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY!}
-              onVerify={(token) => setCaptchaToken(token)}
-              theme="dark"
-            />
+          <div className="flex justify-center py-4">
+            <label className="flex items-center gap-3 bg-[#1E2535] border border-[#2A3347] rounded-xl px-4 py-3 cursor-pointer hover:bg-[#252D3F] transition-colors w-full">
+              <input 
+                type="checkbox" 
+                className="w-5 h-5 rounded border-[#2A3347] text-[#4F8EF7] focus:ring-0 bg-[#0D0F14]"
+                checked={isHuman}
+                onChange={(e) => setIsHuman(e.target.checked)}
+              />
+              <span className="text-sm text-[#E8EDFF]">No soy un robot</span>
+            </label>
           </div>
 
           <button 

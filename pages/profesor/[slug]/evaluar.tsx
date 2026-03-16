@@ -5,7 +5,6 @@ import { motion } from 'motion/react';
 import { AlertCircle, CheckCircle2, Loader2, Info } from 'lucide-react';
 import { useProfessorProfile } from '@/hooks/useProfessorProfile';
 import { useSubmitRating } from '@/hooks/useSubmitRating';
-import HCaptcha from '@hcaptcha/react-hcaptcha';
 import { supabase } from '@/lib/supabase';
 
 export default function EvaluarProfesor() {
@@ -28,7 +27,7 @@ export default function EvaluarProfesor() {
     review_text: '',
   });
 
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [isHuman, setIsHuman] = useState(false);
   const [user, setUser] = useState<any>(null);
 
   // Verificar Auth
@@ -68,8 +67,8 @@ export default function EvaluarProfesor() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!captchaToken) {
-      alert('Por favor, completa el captcha');
+    if (!isHuman) {
+      alert('Por favor, confirma que no eres un robot');
       return;
     }
     if (!formData.subject_id) {
@@ -81,7 +80,7 @@ export default function EvaluarProfesor() {
     await submit({
       ...formData,
       professor_id: professor.id,
-      captcha_token: captchaToken
+      captcha_token: 'simple_verified'
     });
   };
 
@@ -239,11 +238,15 @@ export default function EvaluarProfesor() {
 
             {/* Captcha y Submit */}
             <div className="flex flex-col items-center gap-6">
-              <HCaptcha
-                sitekey={process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY!}
-                onVerify={(token) => setCaptchaToken(token)}
-                theme="dark"
-              />
+              <label className="flex items-center gap-3 bg-[#1A1D26] border border-[#2A2F3D] rounded-2xl px-6 py-4 cursor-pointer hover:bg-[#212531] transition-colors w-full">
+                <input 
+                  type="checkbox" 
+                  className="w-6 h-6 rounded border-[#2A2F3D] text-[#4F8EF7] focus:ring-0 bg-[#0D0F14]"
+                  checked={isHuman}
+                  onChange={(e) => setIsHuman(e.target.checked)}
+                />
+                <span className="text-[#E8EDFF] font-medium">No soy un robot</span>
+              </label>
               
               <div className="bg-blue-500/5 border border-blue-500/20 p-4 rounded-2xl flex items-start gap-3 w-full">
                 <Info className="w-5 h-5 text-[#4F8EF7] shrink-0 mt-0.5" />
