@@ -49,7 +49,11 @@ export function useProfessorProfile(slug: string) {
 
       } catch (err: any) {
         console.error('Error fetching profile:', err);
-        setError(err.message);
+        if (err.message === 'Failed to fetch') {
+          setError('Error de conexión. Verifica que las variables de entorno de Supabase estén configuradas correctamente.');
+        } else {
+          setError(err.message);
+        }
       } finally {
         setLoading(false);
       }

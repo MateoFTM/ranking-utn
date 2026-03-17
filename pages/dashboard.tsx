@@ -14,31 +14,40 @@ export default function Dashboard() {
 
   useEffect(() => {
     const fetchUserData = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        router.push('/auth/login');
-        return;
-      }
-      
-      setUser(user);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          router.push('/auth/login');
+          return;
+        }
+        
+        setUser(user);
 
-      // Obtener las reseñas del usuario actual
-      // Como el usuario es el dueño (user_id = auth.uid()), RLS le permite leerlas sin importar el status
-      const { data: userRatings, error } = await supabase
-        .from('ratings')
-        .select(`
-          *,
-          professors ( full_name, slug ),
-          subjects ( name )
-        `)
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+        // Obtener las reseñas del usuario actual
+        // Como el usuario es el dueño (user_id = auth.uid()), RLS le permite leerlas sin importar el status
+        const { data: userRatings, error } = await supabase
+          .from('ratings')
+          .select(`
+            *,
+            professors ( full_name, slug ),
+            subjects ( name )
+          `)
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
 
-      if (!error && userRatings) {
-        setRatings(userRatings);
+        if (!error && userRatings) {
+          setRatings(userRatings);
+        }
+      } catch (error: any) {
+        console.error('Error fetching user data:', error);
+        if (error.message === 'Failed to fetch') {
+          // Si hay error de conexión, redirigir al login o mostrar error
+          router.push('/auth/login');
+        }
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     fetchUserData();

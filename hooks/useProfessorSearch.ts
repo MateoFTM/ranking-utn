@@ -46,7 +46,11 @@ export function useProfessorSearch() {
       setProfessors(data || []);
     } catch (err: any) {
       console.error('Search error:', err);
-      setError(err.message);
+      if (err.message === 'Failed to fetch') {
+        setError('Error de conexión. Verifica que las variables de entorno de Supabase estén configuradas correctamente.');
+      } else {
+        setError(err.message);
+      }
     } finally {
       setLoading(false);
     }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
@@ -9,6 +9,7 @@ import { motion } from 'motion/react';
 import { supabase } from '@/lib/supabase/client';
 import { getFingerprint, hashFingerprint } from '@/lib/fingerprint';
 import { Mail, Lock, User, Loader2 } from 'lucide-react';
+import HCaptcha from '@hcaptcha/react-hcaptcha';
 
 const schema = z.object({
   username: z.string().min(3, 'Mínimo 3 caracteres').max(20, 'Máximo 20 caracteres'),
@@ -26,15 +27,16 @@ export default function Registro() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isHuman, setIsHuman] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const captchaRef = useRef<HCaptcha>(null);
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema)
   });
 
   const onSubmit = async (data: FormData) => {
-    if (!isHuman) {
-      setError('Por favor, confirma que no eres un robot');
+    if (!captchaToken && process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY) {
+      setError('Por favor, completa el captcha');
       return;
     }
 
@@ -49,6 +51,7 @@ export default function Registro() {
         email: data.email,
         password: data.password,
         options: {
+          captchaToken: captchaToken || undefined,
           data: {
             username: data.username,
             fingerprint_hash: fpHash
@@ -60,7 +63,16 @@ export default function Registro() {
 
       router.push('/auth/verificar-email');
     } catch (err: any) {
-      setError(err.message || 'Ocurrió un error durante el registro');
+      if (err.message === 'Failed to fetch') {
+        setError('Error de conexión. Verifica que las variables de entorno de Supabase estén configuradas correctamente.');
+      } else {
+        setError(err.message || 'Ocurrió un error durante el registro');
+      }
+      // Reset captcha on error
+      if (captchaRef.current) {
+        captchaRef.current.resetCaptcha();
+        setCaptchaToken(null);
+      }
     } finally {
       setLoading(false);
     }
@@ -146,15 +158,19 @@ export default function Registro() {
           </div>
 
           <div className="flex justify-center py-4">
-            <label className="flex items-center gap-3 bg-[#1E2535] border border-[#2A3347] rounded-xl px-4 py-3 cursor-pointer hover:bg-[#252D3F] transition-colors w-full">
-              <input 
-                type="checkbox" 
-                className="w-5 h-5 rounded border-[#2A3347] text-[#4F8EF7] focus:ring-0 bg-[#0D0F14]"
-                checked={isHuman}
-                onChange={(e) => setIsHuman(e.target.checked)}
+            {process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY ? (
+              <HCaptcha
+                ref={captchaRef}
+                sitekey={process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY}
+                onVerify={(token) => setCaptchaToken(token)}
+                onExpire={() => setCaptchaToken(null)}
+                theme="dark"
               />
-              <span className="text-sm text-[#E8EDFF]">No soy un robot</span>
-            </label>
+            ) : (
+              <div className="text-sm text-yellow-500 bg-yellow-500/10 p-3 rounded-lg border border-yellow-500/20">
+                ⚠️ NEXT_PUBLIC_HCAPTCHA_SITE_KEY no está configurada. El registro puede fallar si Supabase requiere CAPTCHA.
+              </div>
+            )}
           </div>
 
           <button 

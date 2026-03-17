@@ -57,7 +57,11 @@ export function useSubmitRating() {
       setSuccess(true);
     } catch (err: any) {
       console.error('Submit rating error:', err);
-      setError(err.message || 'Error al enviar la reseña');
+      if (err.message === 'Failed to fetch') {
+        setError('Error de conexión. Verifica que las variables de entorno de Supabase estén configuradas correctamente.');
+      } else {
+        setError(err.message || 'Error al enviar la reseña');
+      }
     } finally {
       setLoading(false);
     }

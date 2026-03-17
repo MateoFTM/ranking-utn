@@ -3,10 +3,16 @@ import FingerprintJS from '@fingerprintjs/fingerprintjs';
 let fpPromise: ReturnType<typeof FingerprintJS.load> | null = null;
 
 export const getFingerprint = async (): Promise<string> => {
-  if (!fpPromise) fpPromise = FingerprintJS.load();
-  const fp = await fpPromise;
-  const result = await fp.get();
-  return result.visitorId;
+  try {
+    if (!fpPromise) fpPromise = FingerprintJS.load();
+    const fp = await fpPromise;
+    const result = await fp.get();
+    return result.visitorId;
+  } catch (error) {
+    console.warn('FingerprintJS failed to load (likely blocked by adblocker). Using fallback.', error);
+    // Generar un ID de fallback basado en la sesión actual para no bloquear al usuario
+    return 'fallback-' + Math.random().toString(36).substring(2, 15);
+  }
 };
 
 export const hashFingerprint = async (visitorId: string): Promise<string> => {

@@ -7,35 +7,45 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 export const getServerSideProps = async (ctx: any) => {
-  const supabase = createPagesServerClient(ctx.req, ctx.res);
-  const { data: { session } } = await supabase.auth.getSession();
-  
-  if (!session) return { redirect: { destination: '/auth/login', permanent: false } };
-  
-  const { data: profile } = await supabase.from('profiles').select('role').eq('id', session.user.id).single();
-  
-  if (!profile || (profile.role !== 'admin' && profile.role !== 'moderator')) {
-    return { redirect: { destination: '/', permanent: false } };
+  try {
+    const supabase = createPagesServerClient(ctx.req, ctx.res);
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) return { redirect: { destination: '/auth/login', permanent: false } };
+    
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', session.user.id).single();
+    
+    if (!profile || (profile.role !== 'admin' && profile.role !== 'moderator')) {
+      return { redirect: { destination: '/', permanent: false } };
+    }
+
+    // Usamos supabaseAdmin para saltar el RLS y traer TODOS los campos (incluyendo ip_hash y fingerprint)
+    const { data: ratings } = await supabaseAdmin
+      .from('ratings')
+      .select(`
+        *,
+        professors ( full_name, slug ),
+        subjects ( name ),
+        profiles ( email, role )
+      `)
+      .order('created_at', { ascending: false })
+      .limit(100);
+
+    return { 
+      props: { 
+        initialRatings: ratings || [],
+        userRole: profile.role
+      } 
+    };
+  } catch (error) {
+    console.error('Error in moderacion getServerSideProps:', error);
+    return { 
+      props: { 
+        initialRatings: [],
+        userRole: 'guest'
+      } 
+    };
   }
-
-  // Usamos supabaseAdmin para saltar el RLS y traer TODOS los campos (incluyendo ip_hash y fingerprint)
-  const { data: ratings } = await supabaseAdmin
-    .from('ratings')
-    .select(`
-      *,
-      professors ( full_name, slug ),
-      subjects ( name ),
-      profiles ( email, role )
-    `)
-    .order('created_at', { ascending: false })
-    .limit(100);
-
-  return { 
-    props: { 
-      initialRatings: ratings || [],
-      userRole: profile.role
-    } 
-  };
 };
 
 export default function ModeracionPanel({ initialRatings, userRole }: { initialRatings: any[], userRole: string }) {

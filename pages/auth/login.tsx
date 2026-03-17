@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
@@ -8,6 +8,7 @@ import * as z from 'zod';
 import { motion } from 'motion/react';
 import { supabase } from '@/lib/supabase/client';
 import { Mail, Lock, Loader2 } from 'lucide-react';
+import HCaptcha from '@hcaptcha/react-hcaptcha';
 
 const schema = z.object({
   email: z.string().email('Email inválido'),
@@ -20,12 +21,19 @@ export default function Login() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const captchaRef = useRef<HCaptcha>(null);
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema)
   });
 
   const onSubmit = async (data: FormData) => {
+    if (!captchaToken && process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY) {
+      setError('Por favor, completa el captcha');
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -33,6 +41,9 @@ export default function Login() {
       const { error: authError } = await supabase.auth.signInWithPassword({
         email: data.email,
         password: data.password,
+        options: {
+          captchaToken: captchaToken || undefined,
+        }
       });
 
       if (authError) throw authError;
@@ -40,7 +51,16 @@ export default function Login() {
       const redirect = (router.query.redirect as string) || '/';
       router.push(redirect);
     } catch (err: any) {
-      setError(err.message || 'Credenciales inválidas');
+      if (err.message === 'Failed to fetch') {
+        setError('Error de conexión. Verifica que las variables de entorno de Supabase estén configuradas correctamente.');
+      } else {
+        setError(err.message || 'Credenciales inválidas');
+      }
+      // Reset captcha on error
+      if (captchaRef.current) {
+        captchaRef.current.resetCaptcha();
+        setCaptchaToken(null);
+      }
     } finally {
       setLoading(false);
     }
@@ -95,6 +115,22 @@ export default function Login() {
               />
             </div>
             {errors.password && <p className="text-[#F75F5F] text-xs mt-1">{errors.password.message}</p>}
+          </div>
+
+          <div className="flex justify-center py-4">
+            {process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY ? (
+              <HCaptcha
+                ref={captchaRef}
+                sitekey={process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY}
+                onVerify={(token) => setCaptchaToken(token)}
+                onExpire={() => setCaptchaToken(null)}
+                theme="dark"
+              />
+            ) : (
+              <div className="text-sm text-yellow-500 bg-yellow-500/10 p-3 rounded-lg border border-yellow-500/20">
+                ⚠️ NEXT_PUBLIC_HCAPTCHA_SITE_KEY no está configurada. El login puede fallar si Supabase requiere CAPTCHA.
+              </div>
+            )}
           </div>
 
           <button 
