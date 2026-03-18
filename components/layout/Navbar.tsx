@@ -26,7 +26,7 @@ export default function Navbar() {
     <nav className="sticky top-0 z-50 w-full border-b border-[#2A3347] bg-[#0D0F14]/80 backdrop-blur-md">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-[#4F8EF7] rounded-lg flex items-center justify-center text-white font-bold">U</div>
+          <img src="/logo.png" alt="UTN Ranking" className="w-8 h-8 rounded-lg object-contain" />
           <span className="font-syne font-bold text-xl tracking-tight text-[#E8EDFF]">UTN<span className="text-[#4F8EF7]">FRRO</span></span>
         </Link>
 

@@ -23,7 +23,7 @@ export default function BuscarPage() {
         <title>Buscar Profesores | UTN FRRO</title>
       </Head>
       <div className="container mx-auto px-4 py-12">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <header className="mb-12 text-center">
             <h1 className="font-syne text-4xl font-bold mb-4">Encuentra a tu Profesor</h1>
             <p className="text-[#7A8BA6]">Busca por nombre, materia o departamento.</p>
@@ -42,7 +42,7 @@ export default function BuscarPage() {
             />
           </div>
 
-          <div className="grid gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {loading ? (
               <div className="flex justify-center py-12">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#4F8EF7]"></div>
